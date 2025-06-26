@@ -1,17 +1,35 @@
-import { Suspense } from 'react';
+'use client';
 
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { observer } from 'mobx-react-lite';
 
-import { queryClient } from 'shared/lib';
+import {
+  AddEmotionModal,
+  AppHeader,
+  EmotionBoard,
+  EmotionStats,
+} from 'widgets';
+import { emotionStore } from 'shared/stores/emotion.store';
 
-const HomePage = () => {
+const HomePage = observer(() => {
   return (
-    <main className="p-2">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Suspense>Hello World</Suspense>
-      </HydrationBoundary>
-    </main>
+    <div className="min-h-screen bg-gray-50">
+      <AppHeader />
+
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {emotionStore.currentView === 'board' ? (
+          <EmotionBoard />
+        ) : (
+          <EmotionStats />
+        )}
+      </main>
+
+      <AddEmotionModal
+        isOpen={emotionStore.isAddModalOpen}
+        onClose={emotionStore.closeAddModal}
+        onAdd={emotionStore.addEmotion}
+      />
+    </div>
   );
-};
+});
 
 export default HomePage;
