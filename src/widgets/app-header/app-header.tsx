@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { observer } from 'mobx-react-lite';
 
 import { emotionStore, EmotionStore } from 'shared/stores/emotion.store';
+import { Button } from 'shared/ui';
 
 import { ConfirmationModal } from '../confirmation-modal';
 
@@ -78,8 +79,8 @@ export const AppHeader = observer(() => {
             </div>
 
             <nav className="hidden items-center space-x-1 sm:flex">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => emotionStore.setCurrentView('board')}
                 className={clsx(
                   'rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200',
@@ -89,9 +90,9 @@ export const AppHeader = observer(() => {
                 )}
               >
                 📋 Board
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => emotionStore.setCurrentView('stats')}
                 className={clsx(
                   'rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200',
@@ -101,12 +102,12 @@ export const AppHeader = observer(() => {
                 )}
               >
                 📊 Statistics
-              </button>
+              </Button>
             </nav>
 
             <div className="flex items-center space-x-2">
-              <button
-                type="button"
+              <Button
+                variant="default"
                 onClick={emotionStore.openAddModal}
                 className="flex items-center space-x-2 rounded-lg bg-blue-500 px-4 py-2 text-white shadow-md transition-colors duration-200 hover:bg-blue-600 hover:shadow-lg"
               >
@@ -124,12 +125,13 @@ export const AppHeader = observer(() => {
                   />
                 </svg>
                 <span className="hidden sm:inline">Add Emotion</span>
-              </button>
+              </Button>
 
               {emotionStore.emotions.length > 0 && (
-                <button
+                <Button
                   aria-label="Clear all emotions"
-                  type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={handleClearAll}
                   className="rounded-lg p-2 text-red-600 transition-colors duration-200 hover:bg-white/50 hover:text-red-700"
                   title="Clear all emotions"
@@ -147,15 +149,15 @@ export const AppHeader = observer(() => {
                       d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                     />
                   </svg>
-                </button>
+                </Button>
               )}
             </div>
           </div>
 
           <div className="pb-4 sm:hidden">
             <div className="flex space-x-1">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => emotionStore.setCurrentView('board')}
                 className={clsx(
                   'flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
@@ -165,9 +167,9 @@ export const AppHeader = observer(() => {
                 )}
               >
                 📋 Board
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => emotionStore.setCurrentView('stats')}
                 className={clsx(
                   'flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
@@ -177,7 +179,7 @@ export const AppHeader = observer(() => {
                 )}
               >
                 📊 Statistics
-              </button>
+              </Button>
             </div>
           </div>
         </div>

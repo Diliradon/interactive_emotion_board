@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { EMOTION_CONFIG, EmotionType } from 'shared/stores/emotion.store';
+import { Button } from 'shared/ui';
 
 // Validation schema
 const emotionFormSchema = z.object({
@@ -74,8 +75,9 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
           <div className="p-6">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Add Emotion</h2>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleClose}
                 className="rounded-full p-2 transition-colors hover:bg-gray-100"
                 aria-label="Close modal"
@@ -93,7 +95,7 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -107,9 +109,9 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                     const isSelected = selectedEmotion === type;
 
                     return (
-                      <button
+                      <Button
                         key={type}
-                        type="button"
+                        variant="ghost"
                         onClick={() =>
                           setValue('emotion', type, { shouldValidate: true })
                         }
@@ -132,7 +134,7 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                         <span className="text-sm font-medium text-gray-900">
                           {type}
                         </span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -176,15 +178,16 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
               </div>
 
               <div className="flex space-x-3">
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
                   onClick={handleClose}
                   className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="default"
                   disabled={!isValid}
                   className={clsx(
                     'flex-1 rounded-lg px-4 py-2 font-medium transition-all duration-200',
@@ -194,7 +197,7 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                   )}
                 >
                   Add Emotion
-                </button>
+                </Button>
               </div>
             </form>
           </div>

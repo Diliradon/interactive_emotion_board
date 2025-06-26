@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { observer } from 'mobx-react-lite';
 
 import { Emotion } from 'shared/stores/emotion.store';
+import { Button } from 'shared/ui';
 
 interface EmotionCardProps {
   emotion: Emotion;
@@ -114,10 +115,11 @@ export const EmotionCard: FC<EmotionCardProps> = observer(
               </h3>
             </div>
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleDelete}
-              className="hidden rounded-full bg-white/20 p-1 transition-colors hover:bg-white/30 md:block"
+              className="hidden rounded-full bg-white/20 p-1 transition-colors hover:bg-white/30 md:flex"
               aria-label="Delete emotion"
             >
               <svg
@@ -133,7 +135,7 @@ export const EmotionCard: FC<EmotionCardProps> = observer(
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </button>
+            </Button>
           </div>
 
           {emotion.comment && (

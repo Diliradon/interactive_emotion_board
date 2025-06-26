@@ -7,6 +7,7 @@ import {
   emotionStore,
   EmotionType,
 } from 'shared/stores/emotion.store';
+import { Button } from 'shared/ui';
 
 export const EmotionStats = observer(() => {
   const stats = emotionStore.emotionStats;
@@ -26,8 +27,8 @@ export const EmotionStats = observer(() => {
     <div className="space-y-6">
       <div className="flex space-x-1 rounded-lg bg-gray-100 p-1">
         {filters.map(({ key, label }) => (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             key={key}
             onClick={() => emotionStore.setStatsFilter(key)}
             className={clsx(
@@ -38,7 +39,7 @@ export const EmotionStats = observer(() => {
             )}
           >
             {label}
-          </button>
+          </Button>
         ))}
       </div>
 

@@ -1,5 +1,7 @@
 import { FC } from 'react';
 
+import { Button } from 'shared/ui';
+
 interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -86,20 +88,20 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
           </div>
 
           <div className="mt-6 flex space-x-3">
-            <button
-              type="button"
+            <Button
+              variant="outline"
               onClick={onClose}
               className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
             >
               {cancelText}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="default"
               onClick={handleConfirm}
               className={`flex-1 rounded-lg px-4 py-2 font-medium shadow-md transition-all duration-200 hover:shadow-lg ${styles.confirmButton}`}
             >
               {confirmText}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
