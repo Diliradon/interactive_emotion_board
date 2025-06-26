@@ -1,9 +1,25 @@
-import { FC, useState } from 'react';
+import { FC } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { clsx } from 'clsx';
 import { observer } from 'mobx-react-lite';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import { EMOTION_CONFIG, EmotionType } from 'shared/stores/emotion.store';
+
+// Validation schema
+const emotionFormSchema = z.object({
+  emotion: z.nativeEnum(EmotionType, {
+    required_error: 'Please select an emotion',
+  }),
+  comment: z
+    .string()
+    .max(200, 'Comment must be 200 characters or less')
+    .optional(),
+});
+
+type EmotionFormData = z.infer<typeof emotionFormSchema>;
 
 interface AddEmotionModalProps {
   isOpen: boolean;
@@ -13,23 +29,33 @@ interface AddEmotionModalProps {
 
 export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
   ({ isOpen, onClose, onAdd }) => {
-    const [selectedEmotion, setSelectedEmotion] = useState<EmotionType | null>(
-      null,
-    );
-    const [comment, setComment] = useState('');
+    const {
+      register,
+      handleSubmit,
+      watch,
+      setValue,
+      reset,
+      formState: { errors, isValid },
+    } = useForm<EmotionFormData>({
+      resolver: zodResolver(emotionFormSchema),
+      mode: 'onChange',
+      defaultValues: {
+        comment: '',
+      },
+    });
 
-    const handleSubmit = (event: React.FormEvent) => {
-      event.preventDefault();
-      if (selectedEmotion) {
-        onAdd(selectedEmotion, comment.trim());
-        setSelectedEmotion(null);
-        setComment('');
+    const selectedEmotion = watch('emotion');
+    const comment = watch('comment') || '';
+
+    const onSubmit = (data: EmotionFormData) => {
+      if (data.emotion) {
+        onAdd(data.emotion, data.comment?.trim() || '');
+        handleClose();
       }
     };
 
     const handleClose = () => {
-      setSelectedEmotion(null);
-      setComment('');
+      reset();
       onClose();
     };
 
@@ -70,7 +96,7 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
               </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="mb-6">
                 <label className="mb-3 block text-sm font-medium text-gray-700">
                   How are you feeling?
@@ -84,7 +110,9 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                       <button
                         key={type}
                         type="button"
-                        onClick={() => setSelectedEmotion(type)}
+                        onClick={() =>
+                          setValue('emotion', type, { shouldValidate: true })
+                        }
                         className={clsx(
                           'rounded-lg border-2 p-4 transition-all duration-200 hover:scale-105',
                           'flex flex-col items-center space-y-2',
@@ -108,6 +136,11 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                     );
                   })}
                 </div>
+                {errors.emotion && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.emotion.message}
+                  </p>
+                )}
               </div>
 
               <div className="mb-6">
@@ -119,15 +152,26 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                 </label>
                 <textarea
                   id="comment"
-                  value={comment}
-                  onChange={event => setComment(event.target.value)}
+                  {...register('comment')}
                   placeholder="What's on your mind?"
                   rows={3}
-                  className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  className={clsx(
+                    'w-full resize-none rounded-lg border px-3 py-2 focus:ring-2',
+                    errors.comment
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500',
+                  )}
                   maxLength={200}
                 />
-                <div className="mt-1 text-right text-xs text-gray-500">
-                  {comment.length}/200
+                <div className="mt-1 flex justify-between">
+                  {errors.comment && (
+                    <p className="text-sm text-red-600">
+                      {errors.comment.message}
+                    </p>
+                  )}
+                  <div className="ml-auto text-xs text-gray-500">
+                    {comment.length}/200
+                  </div>
                 </div>
               </div>
 
@@ -141,10 +185,10 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                 </button>
                 <button
                   type="submit"
-                  disabled={!selectedEmotion}
+                  disabled={!isValid}
                   className={clsx(
                     'flex-1 rounded-lg px-4 py-2 font-medium transition-all duration-200',
-                    selectedEmotion
+                    isValid
                       ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg'
                       : 'cursor-not-allowed bg-gray-300 text-gray-500',
                   )}
