@@ -1,11 +1,11 @@
-import { FC } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { clsx } from 'clsx';
 import { observer } from 'mobx-react-lite';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { cn } from 'shared/lib';
 import { EMOTION_CONFIG, EmotionType } from 'shared/stores/emotion.store';
 import { Button } from 'shared/ui';
 
@@ -48,6 +48,10 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
     const selectedEmotion = watch('emotion');
     const comment = watch('comment') || '';
 
+    // Add scroll arrow state and ref
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [showScrollArrow, setShowScrollArrow] = useState(false);
+
     const onSubmit = (data: EmotionFormData) => {
       if (data.emotion) {
         onAdd(data.emotion, data.comment?.trim() || '');
@@ -58,6 +62,50 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
     const handleClose = () => {
       reset();
       onClose();
+    };
+
+    // Check if content is scrollable and handle scroll events
+    useEffect(() => {
+      const container = scrollContainerRef.current;
+
+      if (!container) {
+        return;
+      }
+
+      const checkScrollable = () => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const canScrollDown =
+          scrollHeight > clientHeight &&
+          // eslint-disable-next-line no-magic-numbers
+          scrollTop < scrollHeight - clientHeight - 10;
+
+        setShowScrollArrow(canScrollDown);
+      };
+
+      checkScrollable();
+      container.addEventListener('scroll', checkScrollable);
+
+      // Check on window resize as well
+      window.addEventListener('resize', checkScrollable);
+
+      return () => {
+        container.removeEventListener('scroll', checkScrollable);
+        window.removeEventListener('resize', checkScrollable);
+      };
+    }, [isOpen]);
+
+    // Smooth scroll down function
+    const handleScrollDown = () => {
+      const container = scrollContainerRef.current;
+
+      if (!container) {
+        return;
+      }
+
+      container.scrollBy({
+        top: 200,
+        behavior: 'smooth',
+      });
     };
 
     if (!isOpen) {
@@ -71,7 +119,10 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
           onClick={handleClose}
         />
 
-        <div className="zoom-in-95 relative max-h-[90vh] w-full max-w-md animate-in overflow-y-auto rounded-xl bg-white shadow-2xl duration-200">
+        <div
+          ref={scrollContainerRef}
+          className="zoom-in-95 relative max-h-[90vh] w-full max-w-md animate-in overflow-y-auto rounded-xl bg-white shadow-2xl duration-200"
+        >
           <div className="p-6">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Add Emotion</h2>
@@ -115,8 +166,8 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                         onClick={() =>
                           setValue('emotion', type, { shouldValidate: true })
                         }
-                        className={clsx(
-                          'rounded-lg border-2 p-4 transition-all duration-200 hover:scale-105',
+                        className={cn(
+                          'h-full rounded-lg border-2 p-4 transition-all duration-200 hover:scale-105',
                           'flex flex-col items-center space-y-2',
                           isSelected
                             ? 'border-blue-500 bg-blue-50 shadow-md'
@@ -124,7 +175,7 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                         )}
                       >
                         <div
-                          className={clsx(
+                          className={cn(
                             'flex h-12 w-12 items-center justify-center rounded-full',
                             config.color,
                           )}
@@ -157,7 +208,7 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                   {...register('comment')}
                   placeholder="What's on your mind?"
                   rows={3}
-                  className={clsx(
+                  className={cn(
                     'w-full resize-none rounded-lg border px-3 py-2 focus:ring-2',
                     errors.comment
                       ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
@@ -189,7 +240,7 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
                   type="submit"
                   variant="default"
                   disabled={!isValid}
-                  className={clsx(
+                  className={cn(
                     'flex-1 rounded-lg px-4 py-2 font-medium transition-all duration-200',
                     isValid
                       ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:shadow-lg'
@@ -201,6 +252,33 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
               </div>
             </form>
           </div>
+
+          {/* Animated Scroll Down Arrow */}
+          {showScrollArrow && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 transform">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleScrollDown}
+                className="h-10 w-10 animate-bounce rounded-full border border-gray-200 bg-white/90 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white hover:shadow-xl"
+                aria-label="Scroll down"
+              >
+                <svg
+                  className="h-5 w-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );
