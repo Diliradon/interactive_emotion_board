@@ -15,7 +15,7 @@ interface EmotionCardProps {
 
 export const EmotionCard: FC<EmotionCardProps> = observer(
   ({ emotion, onDelete, className }) => {
-    const [isSwipeActive, setIsSwipeActive] = useState(false);
+    const [, setIsSwipeActive] = useState(false);
     const [swipeOffset, setSwipeOffset] = useState(0);
     const [isDeleting, setIsDeleting] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -32,9 +32,16 @@ export const EmotionCard: FC<EmotionCardProps> = observer(
     };
 
     const handleTouchStart = (event: React.TouchEvent) => {
+      // Don't prevent default immediately to allow drag and drop to work
       startXRef.current = event.touches[0].clientX;
       isDraggingRef.current = true;
-      setIsSwipeActive(true);
+
+      // Delay setting swipe active to distinguish from long press for drag
+      setTimeout(() => {
+        if (isDraggingRef.current) {
+          setIsSwipeActive(true);
+        }
+      }, 100);
     };
 
     const handleTouchMove = (event: React.TouchEvent) => {
@@ -45,18 +52,34 @@ export const EmotionCard: FC<EmotionCardProps> = observer(
       const currentX = event.touches[0].clientX;
       const diff = startXRef.current - currentX;
 
-      if (diff > 0) {
-        setSwipeOffset(Math.min(diff, 100));
+      // Only start swiping if we've moved horizontally enough
+      if (Math.abs(diff) > 10) {
+        event.preventDefault();
+
+        // Only allow left swipe (positive diff)
+        if (diff > 0) {
+          const newOffset = Math.min(diff, 120);
+
+          setSwipeOffset(newOffset);
+        } else if (diff < 0) {
+          // Reset if swiping right
+          setSwipeOffset(0);
+        }
       }
     };
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (event: React.TouchEvent) => {
+      if (swipeOffset > 0) {
+        event.preventDefault();
+      }
+
       isDraggingRef.current = false;
       setIsSwipeActive(false);
 
-      if (swipeOffset > 50) {
+      if (swipeOffset > 40) {
         handleDelete();
       } else {
+        // Animate back to original position
         setSwipeOffset(0);
       }
     };
@@ -78,18 +101,23 @@ export const EmotionCard: FC<EmotionCardProps> = observer(
       const updateTransform = () => {
         if (swipeOffset > 0) {
           card.style.transform = `translateX(-${swipeOffset}px)`;
-          card.style.opacity = `${1 - swipeOffset / 100}`;
+          card.style.opacity = `${Math.max(0.3, 1 - swipeOffset / 120)}`;
         } else {
-          card.style.transform = '';
-          card.style.opacity = '';
+          card.style.transform = 'translateX(0px)';
+          card.style.opacity = '1';
+          card.style.transition =
+            'transform 0.3s ease-out, opacity 0.3s ease-out';
+
+          // Remove transition after animation to allow smooth dragging
+          setTimeout(() => {
+            if (card && swipeOffset === 0) {
+              card.style.transition = '';
+            }
+          }, 300);
         }
       };
 
-      const animationFrame = requestAnimationFrame(updateTransform);
-
-      return () => {
-        cancelAnimationFrame(animationFrame);
-      };
+      updateTransform();
     }, [swipeOffset]);
 
     return (
@@ -98,9 +126,14 @@ export const EmotionCard: FC<EmotionCardProps> = observer(
         className={clsx(
           'relative overflow-hidden rounded-lg bg-white shadow-md transition-all duration-150',
           'transform hover:shadow-lg',
+          'select-none', // Prevent text selection during drag/swipe
           isDeleting && 'scale-95 animate-pulse opacity-0',
           className,
         )}
+        style={{
+          touchAction: swipeOffset > 0 ? 'none' : 'manipulation',
+          userSelect: 'none',
+        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -149,23 +182,28 @@ export const EmotionCard: FC<EmotionCardProps> = observer(
           </p>
         </div>
 
-        {isSwipeActive && (
-          <div className="absolute inset-y-0 right-0 flex w-16 items-center justify-center bg-red-500 md:hidden">
-            <svg
-              className="h-6 w-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </div>
-        )}
+        {/* Delete action area - slides in from right */}
+        <div
+          className="absolute inset-y-0 right-0 flex w-20 items-center justify-center bg-red-500 transition-transform duration-200 ease-out md:hidden"
+          style={{
+            transform: `translateX(${Math.max(0, 80 - swipeOffset)}px)`,
+            opacity: swipeOffset > 0 ? 1 : 0,
+          }}
+        >
+          <svg
+            className="h-6 w-6 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </div>
       </div>
     );
   },

@@ -106,7 +106,7 @@ export const EmotionBoard = observer(() => {
             onDragLeave={handleDragLeave}
             onDrop={event => handleDrop(event, emotion.id)}
             onDragEnd={handleDragEnd}
-            className={`cursor-grab transition-all duration-200 active:cursor-grabbing ${draggedItem === emotion.id ? 'scale-105 opacity-50' : ''} ${draggedOverItem === emotion.id ? 'scale-105 ring-2 ring-blue-400 ring-opacity-50' : ''} `}
+            className={`cursor-grab transition-all duration-200 active:cursor-grabbing ${draggedItem === emotion.id ? 'rotate-1 scale-105 opacity-50' : ''} ${draggedOverItem === emotion.id ? 'scale-105 ring-2 ring-blue-400 ring-opacity-50' : ''} hover:scale-102`}
           >
             <EmotionCard
               emotion={emotion}
@@ -116,11 +116,14 @@ export const EmotionBoard = observer(() => {
         ))}
       </div>
 
-      {/* Drag Instructions */}
-      {emotionStore.emotions.length > 1 && !draggedItem && (
+      {/* Instructions */}
+      {emotionStore.emotions.length > 0 && !draggedItem && (
         <div className="py-4 text-center">
-          <p className="text-xs text-gray-400">
+          <p className="hidden text-xs text-gray-400 md:block">
             💡 Drag and drop to reorder your emotions
+          </p>
+          <p className="text-xs text-gray-400 md:hidden">
+            💡 Swipe left to delete • Drag and drop to reorder
           </p>
         </div>
       )}
