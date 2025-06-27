@@ -1,57 +1,62 @@
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 
-import {
-  draggable,
-  dropTargetForElements,
-  monitorForElements,
-} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { clsx } from 'clsx';
 import { observer } from 'mobx-react-lite';
 
 import { emotionStore } from 'shared/stores/emotion.store';
 
 import { EmotionCard } from '../emotion-card';
 
-interface DragData extends Record<string | symbol, unknown> {
-  type: 'emotion';
-  emotionId: string;
-  index: number;
-}
-
 export const EmotionBoard = observer(() => {
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);
 
-  useEffect(() => {
-    return monitorForElements({
-      onDragStart({ source }) {
-        const data = source.data as unknown as DragData;
+  const handleDragStart = (event: React.DragEvent, emotionId: string) => {
+    setDraggedItem(emotionId);
+    event.dataTransfer.effectAllowed = 'move';
+  };
 
-        if (data.type === 'emotion') {
-          setDraggedIndex(data.index);
-        }
-      },
-      onDrop({ source, location }) {
-        const sourceData = source.data as DragData;
-        const target = location.current.dropTargets[0];
+  const handleDragOver = (event: React.DragEvent, emotionId: string) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
 
-        if (target && sourceData.type === 'emotion') {
-          const targetData = target.data as DragData;
+    if (draggedItem && draggedItem !== emotionId) {
+      setDraggedOverItem(emotionId);
+    }
+  };
 
-          if (sourceData.index !== targetData.index) {
-            emotionStore.reorderEmotions(sourceData.index, targetData.index);
-          }
-        }
+  const handleDragLeave = () => {
+    setDraggedOverItem(null);
+  };
 
-        setDraggedIndex(null);
-        setDragOverIndex(null);
-      },
-    });
-  }, []);
+  const handleDrop = (event: React.DragEvent, targetEmotionId: string) => {
+    event.preventDefault();
 
-  const isEmpty = emotionStore.emotions.length === 0;
+    if (!draggedItem || draggedItem === targetEmotionId) {
+      return;
+    }
 
-  if (isEmpty) {
+    const draggedIndex = emotionStore.emotions.findIndex(
+      emotion => emotion.id === draggedItem,
+    );
+    const targetIndex = emotionStore.emotions.findIndex(
+      emotion => emotion.id === targetEmotionId,
+    );
+
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      emotionStore.reorderEmotions(draggedIndex, targetIndex);
+    }
+
+    setDraggedItem(null);
+    setDraggedOverItem(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDraggedOverItem(null);
+  };
+
+  // Empty state
+  if (emotionStore.emotions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-4 py-16">
         <div className="mb-4 text-6xl">😊</div>
@@ -68,116 +73,66 @@ export const EmotionBoard = observer(() => {
 
   return (
     <div className="space-y-4">
+      {/* Desktop Grid Layout */}
       <div className="hidden grid-cols-1 gap-4 sm:grid-cols-2 md:grid lg:grid-cols-3 xl:grid-cols-4">
-        {emotionStore.emotions.map((emotion, index) => (
-          <DraggableEmotionItem
+        {emotionStore.emotions.map(emotion => (
+          <div
             key={emotion.id}
-            emotion={emotion}
-            index={index}
-            isDragged={draggedIndex === index}
-            isDraggedOver={dragOverIndex === index && draggedIndex !== index}
-            onDragOver={setDragOverIndex}
-          />
+            draggable
+            onDragStart={event => handleDragStart(event, emotion.id)}
+            onDragOver={event => handleDragOver(event, emotion.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={event => handleDrop(event, emotion.id)}
+            onDragEnd={handleDragEnd}
+            className={`cursor-grab transition-all duration-200 active:cursor-grabbing ${draggedItem === emotion.id ? 'rotate-2 scale-105 opacity-50' : ''} ${draggedOverItem === emotion.id ? 'scale-105 ring-2 ring-blue-400 ring-opacity-50' : ''} hover:scale-102 hover:shadow-lg`}
+          >
+            <EmotionCard
+              emotion={emotion}
+              onDelete={emotionStore.deleteEmotion}
+              className="h-full"
+            />
+          </div>
         ))}
       </div>
 
       {/* Mobile List Layout */}
       <div className="space-y-3 md:hidden">
-        {emotionStore.emotions.map((emotion, index) => (
+        {emotionStore.emotions.map(emotion => (
           <div
             key={emotion.id}
-            className="overflow-hidden rounded-lg bg-transparent"
+            draggable
+            onDragStart={event => handleDragStart(event, emotion.id)}
+            onDragOver={event => handleDragOver(event, emotion.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={event => handleDrop(event, emotion.id)}
+            onDragEnd={handleDragEnd}
+            className={`cursor-grab transition-all duration-200 active:cursor-grabbing ${draggedItem === emotion.id ? 'scale-105 opacity-50' : ''} ${draggedOverItem === emotion.id ? 'scale-105 ring-2 ring-blue-400 ring-opacity-50' : ''} `}
           >
-            <DraggableEmotionItem
+            <EmotionCard
               emotion={emotion}
-              index={index}
-              isDragged={draggedIndex === index}
-              isDraggedOver={dragOverIndex === index && draggedIndex !== index}
-              onDragOver={setDragOverIndex}
+              onDelete={emotionStore.deleteEmotion}
             />
-
-            {/* Drag Indicator */}
-            {dragOverIndex === index && draggedIndex !== index && (
-              <div className="-my-1 mx-4 h-1 rounded-full bg-blue-400 transition-all duration-200" />
-            )}
           </div>
         ))}
       </div>
 
       {/* Drag Instructions */}
-      {emotionStore.emotions.length > 1 && draggedIndex === null && (
+      {emotionStore.emotions.length > 1 && !draggedItem && (
         <div className="py-4 text-center">
           <p className="text-xs text-gray-400">
             💡 Drag and drop to reorder your emotions
           </p>
         </div>
       )}
+
+      {/* Active drag feedback */}
+      {draggedItem && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 transform">
+          <div className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-lg">
+            Moving emotion... Drop to reorder
+          </div>
+        </div>
+      )}
     </div>
   );
 });
-
-interface DraggableEmotionItemProps {
-  emotion: any;
-  index: number;
-  isDragged: boolean;
-  isDraggedOver: boolean;
-  onDragOver: (index: number | null) => void;
-}
-
-const DraggableEmotionItem: FC<DraggableEmotionItemProps> = ({
-  emotion,
-  index,
-  isDragged,
-  isDraggedOver,
-  onDragOver,
-}) => {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = ref.current;
-
-    if (!element) {
-      return;
-    }
-
-    const dragData: DragData = {
-      type: 'emotion',
-      emotionId: emotion.id,
-      index,
-    };
-
-    const cleanupDraggable = draggable({
-      element,
-      getInitialData: () => dragData as Record<string | symbol, unknown>,
-    });
-
-    const cleanupDropTarget = dropTargetForElements({
-      element,
-      getData: () => dragData as Record<string | symbol, unknown>,
-      onDragEnter: () => onDragOver(index),
-      onDragLeave: () => onDragOver(null),
-    });
-
-    return () => {
-      cleanupDraggable();
-      cleanupDropTarget();
-    };
-  }, [emotion.id, index, onDragOver]);
-
-  return (
-    <div
-      ref={ref}
-      className={clsx(
-        'h-full bg-transparent transition-all',
-        isDragged && 'scale-95 opacity-50',
-        isDraggedOver && 'scale-100 transform bg-transparent',
-      )}
-    >
-      <EmotionCard
-        emotion={emotion}
-        onDelete={emotionStore.deleteEmotion}
-        className="cursor-grab active:cursor-grabbing"
-      />
-    </div>
-  );
-};
