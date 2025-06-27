@@ -54,7 +54,10 @@ export const AddEmotionModal: FC<AddEmotionModalProps> = observer(
 
     const onSubmit = (data: EmotionFormData) => {
       if (data.emotion) {
-        onAdd(data.emotion, data.comment?.trim() || '');
+        onAdd(
+          data.emotion,
+          data.comment?.trim() || 'Here could be your advetisement!',
+        );
         handleClose();
       }
     };
